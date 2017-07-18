@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+
 # Skip data from the beginning of the simulation
 skip_time_avg = 3600.
 
