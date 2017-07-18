@@ -20,7 +20,10 @@ args = parser.parse_args()
 #==========================================================#
 
 # Read in the dataset
-ds = nc.Dataset(args.rfile)
+try:
+  ds = nc.Dataset(args.rfile)
+except RuntimeError:
+  raise IOError("Input file {} not found!".format(args.rfile))
 
 # Skip first hour of the simulation
 timepoints, = np.where(ds.variables['time'][:]>=skip_time_avg)
@@ -33,15 +36,18 @@ sep = [[''] * (len(pr_heights)+1)] # empty line string
 print("#=================== Statistical domain 00 ===================#")
 pr_01 = averageProfilesWS('00', timepoints, pr_heights, ds)
 pr_02 = averageProfilesVariances('00', timepoints, pr_heights,ds)
-qty_list = np.concatenate((pr_01, sep, pr_02), axis=0)
+pr_03 =averageProfilesMomentumFluxes('00', timepoints, pr_heights, ds)
+qty_list = np.concatenate((pr_01, sep, pr_02, sep, pr_03), axis=0)
 print(tb.tabulate(qty_list, headers=header)+"\n")
 print("#=================== Statistical domain 01 ===================#")
 pr_01 = averageProfilesWS('01', timepoints, pr_heights, ds)
 pr_02 = averageProfilesVariances('01', timepoints, pr_heights,ds)
-qty_list = np.concatenate((pr_01, sep, pr_02), axis=0)
+pr_03 =averageProfilesMomentumFluxes('01', timepoints, pr_heights, ds)
+qty_list = np.concatenate((pr_01, sep, pr_02, sep, pr_03), axis=0)
 print(tb.tabulate(qty_list, headers=header)+"\n")
 print("#=================== Statistical domain 02 ===================#")
 pr_01 = averageProfilesWS('02', timepoints, pr_heights, ds)
 pr_02 = averageProfilesVariances('02', timepoints, pr_heights,ds)
-qty_list = np.concatenate((pr_01, sep, pr_02), axis=0)
+pr_03 =averageProfilesMomentumFluxes('02', timepoints, pr_heights, ds)
+qty_list = np.concatenate((pr_01, sep, pr_02, sep, pr_03), axis=0)
 print(tb.tabulate(qty_list, headers=header)+"\n")

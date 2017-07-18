@@ -35,3 +35,12 @@ def averageProfilesVariances(statdomain, t_inds, h_inds, ds):
   var_w = createTableRow(var_w,'w*2')
 
   return [var_u,var_v,var_w]
+
+def averageProfilesMomentumFluxes(statdomain,t_inds, h_inds, ds):
+  flx_u = np.mean(ds.variables['wu_'+statdomain][t_inds,h_inds],axis=0)
+  flx_u = createTableRow(flx_u, "wu")
+
+  flx_v = np.mean(ds.variables['wv_'+statdomain][t_inds,h_inds],axis=0)
+  flx_v = createTableRow(flx_v, "wv")
+
+  return [flx_u, flx_v]
