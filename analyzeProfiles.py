@@ -35,9 +35,11 @@ timepoints, = np.where(ds.variables['time'][:]>=skip_time_avg)
 
 sep = [[''] * (len(pr_heights)+1)] # empty line string
 
-for domain in args.domains:
-  if (not(args.compare)):
-    print("#=================== Statistical domain " + domain + " ===================#")
+
+if (not(args.compare)):
+  print("#=============== Time-averaged variables for dataset {} ===============#".format(args.file))
+  for domain in args.domains:
+    print("***** Statistical domain {} *****".format(domain))
     pr_01 = averageProfilesWS(domain, timepoints, pr_heights, ds)
     pr_02 = averageProfilesVariances(domain, timepoints, pr_heights,ds)
     pr_03 = averageProfilesMomentumFluxes(domain, timepoints, pr_heights, ds)
@@ -45,14 +47,17 @@ for domain in args.domains:
     qty_list = np.concatenate((pr_01, sep, pr_02, sep, pr_03, sep, pr_04), axis=0)
     print(tb.tabulate(qty_list, headers=pr_header)+"\n")
 
-  else:
-    # Compare to another dataset
-    try:
-      cds = nc.Dataset(args.compare)
-    except RuntimeError:
-      raise IOError("Input file {} not found!".format(args.compare))
-    ctimepoints, = np.where(cds.variables['time'][:]>=skip_time_avg)
+else:
+  # Compare to another dataset
+  try:
+    cds = nc.Dataset(args.compare)
+  except RuntimeError:
+    raise IOError("Input file {} not found!".format(args.compare))
 
+  ctimepoints, = np.where(cds.variables['time'][:]>=skip_time_avg)
+  print("#=============== Comparing dataset {} against {} ===============#".format(args.file, args.compare))
+  for domain in args.domains:
+    print("***** Statistical domain {} *****".format(domain))
     pr_01 = compareProfilesWS(domain, timepoints, ctimepoints, pr_heights, ds, cds)
     pr_02 = compareProfilesVariances(domain, timepoints, ctimepoints, pr_heights, ds, cds)
     pr_03 = compareProfilesMomentumFluxes(domain, timepoints, ctimepoints, pr_heights, ds, cds)
