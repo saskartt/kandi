@@ -3,6 +3,7 @@ import sys
 import argparse
 import numpy as np
 from PIL import Image
+from settings import *
 from kandiLib import *
 from mapTools import *
 
@@ -20,10 +21,10 @@ args = parser.parse_args()
 
 #==========================================================#
 
-# try
-img = Image.open(args.file)
-# except:
-  # raise IOError("Input file {} not found!".format(args.file))
+try:
+  img = Image.open(args.file)
+except:
+  raise IOError("Input file {} not found!".format(args.file))
 
 imgarr = np.array(img)
 

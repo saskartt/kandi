@@ -1,5 +1,6 @@
-import numpy as np
 import sys
+import numpy as np
+import netCDF4 as nc
 
 # =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
 
@@ -7,6 +8,13 @@ def createTableRow(qty,label):
   qty = qty.astype(str)
   qty = np.insert(qty, 0, label)
   return qty
+
+def openDataSet(filename):
+  try:
+    ds = nc.Dataset(filename)
+  except RuntimeError:
+    raise IOError("Input file {} not found!".format(filename))
+  return ds
 
 def averageProfilesWS(statdomain, t_inds, h_inds, ds):
   # Mean values
@@ -38,12 +46,15 @@ def averageProfilesVariances(statdomain, t_inds, h_inds, ds):
 
 def averageProfilesMomentumFluxes(statdomain,t_inds, h_inds, ds):
   flx_u = np.mean(ds.variables['wu_'+statdomain][t_inds,h_inds],axis=0)
-  flx_u = createTableRow(flx_u, "wu")
+  flx_u_str = createTableRow(flx_u, "wu")
 
   flx_v = np.mean(ds.variables['wv_'+statdomain][t_inds,h_inds],axis=0)
-  flx_v = createTableRow(flx_v, "wv")
+  flx_v_str = createTableRow(flx_v, "wv")
 
-  return [flx_u, flx_v]
+  flx_uv = flx_u + flx_v
+  flx_uv = createTableRow(flx_uv, "u'w'+ v'w'")
+
+  return [flx_u_str, flx_v_str, flx_uv]
 
 def averageProfilesTKE(statdomain, t_inds, h_inds, ds):
   tke_e = np.mean(ds.variables['e_'+statdomain][t_inds,h_inds],axis=0)
@@ -94,7 +105,11 @@ def compareProfilesMomentumFluxes(statdomain, t_inds, ct_inds, h_inds, ds, cds):
   flx_cv = np.mean(cds.variables['wv_'+statdomain][ct_inds,h_inds],axis=0)
   cmp_flx_v = createTableRow(np.divide(flx_v,flx_cv)*100.,'wv (%)')
 
-  return [cmp_flx_u, cmp_flx_v]
+  flx = flx_u + flx_v
+  flx_c = flx_cu + flx_cv
+  cmp_flx = createTableRow(np.divide(flx,flx_c)*100., "u'w'+ v'w'")
+
+  return [cmp_flx_u, cmp_flx_v, cmp_flx]
 
 def compareProfilesTKE(statdomain, t_inds, ct_inds, h_inds, ds, cds):
   tke_e = np.mean(ds.variables['e_'+statdomain][t_inds,h_inds],axis=0)
@@ -102,3 +117,39 @@ def compareProfilesTKE(statdomain, t_inds, ct_inds, h_inds, ds, cds):
   cmp_tke_e = createTableRow(np.divide(tke_e,tke_ce)*100.,'TKE (%)')
 
   return [cmp_tke_e]
+
+def compileDataListAverages(domain, t_inds, h_inds, ds, varlist):
+  sep = [[''] * (len(h_inds) + 1)]  # empty line string
+  dlist = []
+
+  if ('ws' in varlist):
+    pr_01 = averageProfilesWS(domain, t_inds, h_inds, ds)
+    dlist = dlist + pr_01
+  if ('var' in varlist):
+    pr_02 = averageProfilesVariances(domain, t_inds, h_inds, ds)
+    dlist = dlist + pr_02
+  if ('flux' in varlist):
+    pr_03 = averageProfilesMomentumFluxes(domain, t_inds, h_inds, ds)
+    dlist = dlist + pr_03
+  if ('tke' in varlist):
+    pr_04 = averageProfilesTKE(domain, t_inds, h_inds, ds)
+    dlist = dlist + pr_04
+  return dlist
+
+def compileDataListCompare(domain, t_inds, ct_inds, h_inds, ds, cds, varlist):
+  sep = [[''] * (len(h_inds) + 1)]  # empty line string
+  dlist = []
+
+  if ('ws' in varlist):
+    pr_01 = compareProfilesWS(domain, t_inds, ct_inds, h_inds, ds, cds)
+    dlist = dlist + pr_01 + sep
+  if ('var' in varlist):
+    pr_02 = compareProfilesVariances(domain, t_inds, ct_inds, h_inds, ds, cds)
+    dlist = dlist + pr_02 + sep
+  if ('flux' in varlist):
+    pr_03 = compareProfilesMomentumFluxes(domain, t_inds, ct_inds, h_inds, ds, cds)
+    dlist = dlist + pr_03 + sep
+  if ('tke' in varlist):
+    pr_04 = compareProfilesTKE(domain, t_inds, ct_inds, h_inds, ds, cds)
+    dlist = dlist + pr_04 + sep
+  return dlist
