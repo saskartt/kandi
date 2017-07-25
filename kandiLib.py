@@ -18,13 +18,17 @@ def openDataSet(filename):
 
 def averageProfilesWS(statdomain, t_inds, h_inds, ds):
   # Mean values
-  u = np.mean(ds.variables['u_'+statdomain][t_inds,h_inds],axis=0)
+  u = np.mean(ds.variables['u_0'+statdomain][t_inds,:],axis=0)
+  # Interpolate values
+  u = np.interp(h_inds, ds.variables['zu_0'+statdomain][:], u)
   str_u = createTableRow(u,'u')
 
-  v = np.mean(ds.variables['v_'+statdomain][t_inds,h_inds],axis=0)
+  v = np.mean(ds.variables['v_0'+statdomain][t_inds,:],axis=0)
+  v = np.interp(h_inds, ds.variables['zv_0'+statdomain][:], v)
   str_v = createTableRow(v,'v')
 
-  w = np.mean(ds.variables['w_'+statdomain][t_inds,h_inds],axis=0)
+  w = np.mean(ds.variables['w_0'+statdomain][t_inds,:],axis=0)
+  w = np.interp(h_inds, ds.variables['zw_0'+statdomain][:], w)
   str_w = createTableRow(w,'w')
 
   U = np.linalg.norm([u,v],axis=0)
@@ -33,22 +37,27 @@ def averageProfilesWS(statdomain, t_inds, h_inds, ds):
 
 def averageProfilesVariances(statdomain, t_inds, h_inds, ds):
   # Variances
-  var_u = np.mean(ds.variables['u*2_'+statdomain][t_inds,h_inds],axis=0)
+  var_u = np.mean(ds.variables['u*2_0'+statdomain][t_inds,:],axis=0)
+  var_u = np.interp(h_inds, ds.variables['zu*2_0'+statdomain][:], var_u)
   var_u = createTableRow(var_u,'u*2')
 
-  var_v = np.mean(ds.variables['v*2_'+statdomain][t_inds,h_inds],axis=0)
+  var_v = np.mean(ds.variables['v*2_0'+statdomain][t_inds,:],axis=0)
+  var_v = np.interp(h_inds, ds.variables['zv*2_0'+statdomain][:], var_v)
   var_v = createTableRow(var_v,'v*2')
 
-  var_w = np.mean(ds.variables['w*2_'+statdomain][t_inds,h_inds],axis=0)
+  var_w = np.mean(ds.variables['w*2_0'+statdomain][t_inds,:],axis=0)
+  var_w = np.interp(h_inds, ds.variables['zw*2_0'+statdomain][:], var_w)
   var_w = createTableRow(var_w,'w*2')
 
   return [var_u,var_v,var_w]
 
 def averageProfilesMomentumFluxes(statdomain,t_inds, h_inds, ds):
-  flx_u = np.mean(ds.variables['wu_'+statdomain][t_inds,h_inds],axis=0)
+  flx_u = np.mean(ds.variables['wu_0'+statdomain][t_inds,:],axis=0)
+  flx_u = np.interp(h_inds, ds.variables['zwu_0'+statdomain][:], flx_u)
   flx_u_str = createTableRow(flx_u, "wu")
 
-  flx_v = np.mean(ds.variables['wv_'+statdomain][t_inds,h_inds],axis=0)
+  flx_v = np.mean(ds.variables['wv_0'+statdomain][t_inds,:],axis=0)
+  flx_v = np.interp(h_inds, ds.variables['zwv_0'+statdomain][:], flx_v)
   flx_v_str = createTableRow(flx_v, "wv")
 
   flx_uv = flx_u + flx_v
@@ -57,52 +66,69 @@ def averageProfilesMomentumFluxes(statdomain,t_inds, h_inds, ds):
   return [flx_u_str, flx_v_str, flx_uv]
 
 def averageProfilesTKE(statdomain, t_inds, h_inds, ds):
-  tke_e = np.mean(ds.variables['e_'+statdomain][t_inds,h_inds],axis=0)
+  tke_e = np.mean(ds.variables['e_0'+statdomain][t_inds,:],axis=0)
+  tke_e = np.interp(h_inds, ds.variables['ze_0'+statdomain][:], tke_e)
   tke_e = createTableRow(tke_e, "TKE")
 
   return [tke_e]
 
 def compareProfilesWS(statdomain, t_inds, ct_inds, h_inds, ds, cds):
-  u = np.mean(ds.variables['u_'+statdomain][t_inds,h_inds],axis=0)
-  cu = np.mean(cds.variables['u_'+statdomain][ct_inds,h_inds],axis=0)
+  u = np.mean(ds.variables['u_0'+statdomain][t_inds,:],axis=0)
+  u = np.interp(h_inds, ds.variables['zu_0'+statdomain][:], u)
+  cu = np.mean(cds.variables['u_0'+statdomain][ct_inds,:],axis=0)
+  cu = np.interp(h_inds, ds.variables['zu_0'+statdomain][:], cu)
   cmp_u = createTableRow(np.divide(u,cu)*100.,'u (%)')
 
-  v = np.mean(ds.variables['v_'+statdomain][t_inds,h_inds],axis=0)
-  cv = np.mean(cds.variables['v_'+statdomain][ct_inds,h_inds],axis=0)
+  v = np.mean(ds.variables['v_0'+statdomain][t_inds,:],axis=0)
+  v = np.interp(h_inds, ds.variables['zv_0'+statdomain][:], v)
+  cv = np.mean(cds.variables['v_0'+statdomain][ct_inds,:],axis=0)
+  cv = np.interp(h_inds, ds.variables['zv_0'+statdomain][:], cv)
   cmp_v = createTableRow(np.divide(v,cv)*100.,'v (%)')
 
-  w = np.mean(ds.variables['w_'+statdomain][t_inds,h_inds],axis=0)
-  cw = np.mean(cds.variables['w_'+statdomain][ct_inds,h_inds],axis=0)
+  w = np.mean(ds.variables['w_0'+statdomain][t_inds,:],axis=0)
+  w = np.interp(h_inds, ds.variables['zw_0'+statdomain][:], w)
+  cw = np.mean(cds.variables['w_0'+statdomain][ct_inds,:],axis=0)
+  cw = np.interp(h_inds, ds.variables['zv_0'+statdomain][:], cw)
   cmp_w = createTableRow(np.divide(w,cw)*100.,'w (%)')
 
-  U = np.linalg.norm([u,v],axis=0)
-  cU = np.linalg.norm([cu,cv],axis=0)
+  U = np.linalg.norm([u,v,w],axis=0)
+  cU = np.linalg.norm([cu,cv,cw],axis=0)
   cmp_U = createTableRow(np.divide(U,cU)*100.,'U (%)')
 
   return [cmp_u, cmp_v, cmp_w, cmp_U]
 
 def compareProfilesVariances(statdomain, t_inds, ct_inds, h_inds, ds, cds):
-  var_u = np.mean(ds.variables['u*2_'+statdomain][t_inds,h_inds],axis=0)
-  var_cu = np.mean(cds.variables['u*2_'+statdomain][ct_inds,h_inds],axis=0)
+  var_u = np.mean(ds.variables['u*2_0'+statdomain][t_inds,:],axis=0)
+  var_u = np.interp(h_inds, ds.variables['zu*2_0'+statdomain][:], var_u)
+  var_cu = np.mean(cds.variables['u*2_0'+statdomain][ct_inds,:],axis=0)
+  var_cu = np.interp(h_inds, ds.variables['zu*2_0'+statdomain][:], var_cu)
   cmp_var_u = createTableRow(np.divide(var_u,var_cu)*100.,'u*2 (%)')
 
-  var_v = np.mean(ds.variables['v*2_'+statdomain][t_inds,h_inds],axis=0)
-  var_cv = np.mean(cds.variables['v*2_'+statdomain][ct_inds,h_inds],axis=0)
+  var_v = np.mean(ds.variables['v*2_0'+statdomain][t_inds,:],axis=0)
+  var_v = np.interp(h_inds, ds.variables['zv*2_0'+statdomain][:], var_v)
+  var_cv = np.mean(cds.variables['v*2_0'+statdomain][ct_inds,:],axis=0)
+  var_cv = np.interp(h_inds, ds.variables['zv*2_0'+statdomain][:], var_cv)
   cmp_var_v = createTableRow(np.divide(var_v,var_cv)*100.,'v*2 (%)')
 
-  var_w = np.mean(ds.variables['w*2_'+statdomain][t_inds,h_inds],axis=0)
-  var_cw = np.mean(cds.variables['w*2_'+statdomain][ct_inds,h_inds],axis=0)
+  var_w = np.mean(ds.variables['w*2_0'+statdomain][t_inds,:],axis=0)
+  var_w = np.interp(h_inds, ds.variables['zw*2_0'+statdomain][:], var_w)
+  var_cw = np.mean(cds.variables['w*2_0'+statdomain][ct_inds,:],axis=0)
+  var_cw = np.interp(h_inds, ds.variables['zw*2_0'+statdomain][:], var_cw)
   cmp_var_w = createTableRow(np.divide(var_w,var_cw)*100.,'w*2 (%)')
 
   return [cmp_var_u, cmp_var_v, cmp_var_w]
 
 def compareProfilesMomentumFluxes(statdomain, t_inds, ct_inds, h_inds, ds, cds):
-  flx_u = np.mean(ds.variables['wu_'+statdomain][t_inds,h_inds],axis=0)
-  flx_cu = np.mean(cds.variables['wu_'+statdomain][ct_inds,h_inds],axis=0)
+  flx_u = np.mean(ds.variables['wu_0'+statdomain][t_inds,:],axis=0)
+  flx_u = np.interp(h_inds, ds.variables['zwu_0'+statdomain][:], flx_u)
+  flx_cu = np.mean(cds.variables['wu_0'+statdomain][ct_inds,:],axis=0)
+  flx_cu = np.interp(h_inds, ds.variables['zwu_0'+statdomain][:], flx_cu)
   cmp_flx_u = createTableRow(np.divide(flx_u,flx_cu)*100.,'wu (%)')
 
-  flx_v = np.mean(ds.variables['wv_'+statdomain][t_inds,h_inds],axis=0)
-  flx_cv = np.mean(cds.variables['wv_'+statdomain][ct_inds,h_inds],axis=0)
+  flx_v = np.mean(ds.variables['wv_0'+statdomain][t_inds,:],axis=0)
+  flx_v = np.interp(h_inds, ds.variables['zwv_0'+statdomain][:], flx_v)
+  flx_cv = np.mean(cds.variables['wv_0'+statdomain][ct_inds,:],axis=0)
+  flx_cv = np.interp(h_inds, ds.variables['zwv_0'+statdomain][:], flx_cv)
   cmp_flx_v = createTableRow(np.divide(flx_v,flx_cv)*100.,'wv (%)')
 
   flx = flx_u + flx_v
@@ -112,8 +138,10 @@ def compareProfilesMomentumFluxes(statdomain, t_inds, ct_inds, h_inds, ds, cds):
   return [cmp_flx_u, cmp_flx_v, cmp_flx]
 
 def compareProfilesTKE(statdomain, t_inds, ct_inds, h_inds, ds, cds):
-  tke_e = np.mean(ds.variables['e_'+statdomain][t_inds,h_inds],axis=0)
-  tke_ce = np.mean(cds.variables['e_'+statdomain][ct_inds,h_inds],axis=0)
+  tke_e = np.mean(ds.variables['e_0'+statdomain][t_inds,:],axis=0)
+  tke_e = np.interp(h_inds, ds.variables['ze_0'+statdomain][:], tke_e)
+  tke_ce = np.mean(cds.variables['e_0'+statdomain][ct_inds,:],axis=0)
+  tke_ce = np.interp(h_inds, ds.variables['ze_0'+statdomain][:], tke_ce)
   cmp_tke_e = createTableRow(np.divide(tke_e,tke_ce)*100.,'TKE (%)')
 
   return [cmp_tke_e]

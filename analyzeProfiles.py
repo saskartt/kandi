@@ -32,6 +32,12 @@ ds = openDataSet(args.file)
 # Skip time from beginning
 t_inds, = np.where(ds.variables['time'][:] >= skip_time_avg)
 
+# Generate table header
+pr_table_header = str(pr_heights_table)
+pr_table_header = [`s` + ' m' for s in pr_heights_table]
+pr_table_header.insert(0, "Variable")
+print(pr_table_header)
+
 if (not(args.compare)):
   print("#=============== Time-averaged variables for dataset {} ===============#".format(args.file))
   for domain in args.domains:

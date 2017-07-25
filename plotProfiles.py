@@ -3,6 +3,7 @@ import sys
 import argparse
 import numpy as np
 import matplotlib as mpl
+mpl.use('GTKCairo')
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 from matplotlib import rc
@@ -48,6 +49,8 @@ if (args.xlims):
   axes.set_xlim(args.xlims)
 if (args.ylims):
   axes.set_ylim(args.ylims)
+else:
+  axes.set_ylim([0, 128])
 plt.ylabel("$z\/\mathrm{(m)}$",fontsize=14)
 for ds in dsList:
   for domain in args.domains:
@@ -110,9 +113,12 @@ for ds in dsList:
     else:
       raise NameError("Unknown variable "+args.variable)
 
-    plt.plot(pr,pr_heights_plot, label=r'Run: {}, domain: {}'.format(nameList[ds], domain))
+    plt.plot(pr,pr_heights_plot, label=r'Run: {}, stat. domain: {}'.format(nameList[ds][4:], domain))
 
-plt.legend(loc=0, fontsize=9)
+leg = plt.legend(loc=0, fontsize=9)
+for legobj in leg.legendHandles:
+    legobj.set_linewidth(2.0)
+
 if (args.save):
   plt.savefig(args.save)
   print("Figure {} saved.".format(args.save))
