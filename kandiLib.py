@@ -31,7 +31,7 @@ def averageProfilesWS(statdomain, t_inds, h_inds, ds):
   w = np.interp(h_inds, ds.variables['zw_0'+statdomain][:], w)
   str_w = createTableRow(w,'w')
 
-  U = np.linalg.norm([u,v],axis=0)
+  U = np.linalg.norm([u,v,w],axis=0)
   str_U = createTableRow(U,'U')
   return [str_u,str_v,str_w,str_U]
 
@@ -66,9 +66,12 @@ def averageProfilesMomentumFluxes(statdomain,t_inds, h_inds, ds):
   return [flx_u_str, flx_v_str, flx_uv]
 
 def averageProfilesTKE(statdomain, t_inds, h_inds, ds):
-  tke_e = np.mean(ds.variables['e_0'+statdomain][t_inds,:],axis=0)
-  tke_e = np.interp(h_inds, ds.variables['ze_0'+statdomain][:], tke_e)
-  tke_e = createTableRow(tke_e, "TKE")
+  # Resolved perturbation energy and subgrid-scale TKE
+  tke_e = np.mean(ds.variables['e*_0'+statdomain][t_inds,:],axis=0)
+  tke_e = np.interp(h_inds, ds.variables['ze*_0'+statdomain][:], tke_e)
+  tke_e_sg = np.mean(ds.variables['e_0'+statdomain][t_inds,:],axis=0)
+  tke_e_sg = np.interp(h_inds, ds.variables['ze_0'+statdomain][:], tke_e_sg)
+  tke_e = createTableRow(tke_e+tke_e_sg, "TKE")
 
   return [tke_e]
 
@@ -138,10 +141,19 @@ def compareProfilesMomentumFluxes(statdomain, t_inds, ct_inds, h_inds, ds, cds):
   return [cmp_flx_u, cmp_flx_v, cmp_flx]
 
 def compareProfilesTKE(statdomain, t_inds, ct_inds, h_inds, ds, cds):
-  tke_e = np.mean(ds.variables['e_0'+statdomain][t_inds,:],axis=0)
-  tke_e = np.interp(h_inds, ds.variables['ze_0'+statdomain][:], tke_e)
-  tke_ce = np.mean(cds.variables['e_0'+statdomain][ct_inds,:],axis=0)
-  tke_ce = np.interp(h_inds, ds.variables['ze_0'+statdomain][:], tke_ce)
+  # Resolved perturbation energy and subgrid-scale TKE
+  tke_e = np.mean(ds.variables['e*_0'+statdomain][t_inds,:],axis=0)
+  tke_e = np.interp(h_inds, ds.variables['ze*_0'+statdomain][:], tke_e)
+  tke_e_sg = np.mean(ds.variables['e_0'+statdomain][t_inds,:],axis=0)
+  tke_e_sg = np.interp(h_inds, ds.variables['ze_0'+statdomain][:], tke_e_sg)
+  tke_e = tke_e + tke_e_sg
+
+  tke_ce = np.mean(cds.variables['e*_0'+statdomain][ct_inds,:],axis=0)
+  tke_ce = np.interp(h_inds, cds.variables['ze*_0'+statdomain][:], tke_ce)
+  tke_ce_sg = np.mean(cds.variables['e_0'+statdomain][ct_inds,:],axis=0)
+  tke_ce_sg = np.interp(h_inds, cds.variables['ze_0'+statdomain][:], tke_ce_sg)
+  tke_ce = tke_ce + tke_ce_sg
+
   cmp_tke_e = createTableRow(np.divide(tke_e,tke_ce)*100.,'TKE (%)')
 
   return [cmp_tke_e]
@@ -162,6 +174,9 @@ def compileDataListAverages(domain, t_inds, h_inds, ds, varlist):
   if ('tke' in varlist):
     pr_04 = averageProfilesTKE(domain, t_inds, h_inds, ds)
     dlist = dlist + pr_04
+  if ('skew' in varlist):
+    pr_05 = averageProfilesSkewness(domain, t_inds, h_inds, ds)
+    dlist = dlist + pr_05
   return dlist
 
 def compileDataListCompare(domain, t_inds, ct_inds, h_inds, ds, cds, varlist):
