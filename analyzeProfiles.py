@@ -7,7 +7,7 @@ from settings import *
 from kandiLib import *
 
 '''
-Calculate various time-averaged quatntities from profiles.
+Calculate various time-averaged quantities from profiles.
 '''
 
 #==========================================================#

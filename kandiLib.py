@@ -4,17 +4,21 @@ import netCDF4 as nc
 
 # =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
 
-def createTableRow(qty,label):
-  qty = qty.astype(str)
-  qty = np.insert(qty, 0, label)
-  return qty
-
 def openDataSet(filename):
   try:
     ds = nc.Dataset(filename)
   except RuntimeError:
     raise IOError("Input file {} not found!".format(filename))
   return ds
+
+# =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+
+def createTableRow(qty,label):
+  qty = qty.astype(str)
+  qty = np.insert(qty, 0, label)
+  return qty
+
+# =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
 
 def averageProfilesWS(statdomain, t_inds, h_inds, ds):
   # Mean values
@@ -35,6 +39,8 @@ def averageProfilesWS(statdomain, t_inds, h_inds, ds):
   str_U = createTableRow(U,'U')
   return [str_u,str_v,str_w,str_U]
 
+# =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+
 def averageProfilesVariances(statdomain, t_inds, h_inds, ds):
   # Variances
   var_u = np.mean(ds.variables['u*2_0'+statdomain][t_inds,:],axis=0)
@@ -51,6 +57,8 @@ def averageProfilesVariances(statdomain, t_inds, h_inds, ds):
 
   return [var_u,var_v,var_w]
 
+# =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+
 def averageProfilesMomentumFluxes(statdomain,t_inds, h_inds, ds):
   flx_u = np.mean(ds.variables['wu_0'+statdomain][t_inds,:],axis=0)
   flx_u = np.interp(h_inds, ds.variables['zwu_0'+statdomain][:], flx_u)
@@ -65,6 +73,8 @@ def averageProfilesMomentumFluxes(statdomain,t_inds, h_inds, ds):
 
   return [flx_u_str, flx_v_str, flx_uv]
 
+# =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+
 def averageProfilesTKE(statdomain, t_inds, h_inds, ds):
   # Resolved perturbation energy and subgrid-scale TKE
   tke_e = np.mean(ds.variables['e*_0'+statdomain][t_inds,:],axis=0)
@@ -74,6 +84,8 @@ def averageProfilesTKE(statdomain, t_inds, h_inds, ds):
   tke_e = createTableRow(tke_e+tke_e_sg, "TKE")
 
   return [tke_e]
+
+# =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
 
 def compareProfilesWS(statdomain, t_inds, ct_inds, h_inds, ds, cds):
   u = np.mean(ds.variables['u_0'+statdomain][t_inds,:],axis=0)
@@ -100,6 +112,8 @@ def compareProfilesWS(statdomain, t_inds, ct_inds, h_inds, ds, cds):
 
   return [cmp_u, cmp_v, cmp_w, cmp_U]
 
+# =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+
 def compareProfilesVariances(statdomain, t_inds, ct_inds, h_inds, ds, cds):
   var_u = np.mean(ds.variables['u*2_0'+statdomain][t_inds,:],axis=0)
   var_u = np.interp(h_inds, ds.variables['zu*2_0'+statdomain][:], var_u)
@@ -121,6 +135,8 @@ def compareProfilesVariances(statdomain, t_inds, ct_inds, h_inds, ds, cds):
 
   return [cmp_var_u, cmp_var_v, cmp_var_w]
 
+# =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+
 def compareProfilesMomentumFluxes(statdomain, t_inds, ct_inds, h_inds, ds, cds):
   flx_u = np.mean(ds.variables['wu_0'+statdomain][t_inds,:],axis=0)
   flx_u = np.interp(h_inds, ds.variables['zwu_0'+statdomain][:], flx_u)
@@ -140,6 +156,8 @@ def compareProfilesMomentumFluxes(statdomain, t_inds, ct_inds, h_inds, ds, cds):
 
   return [cmp_flx_u, cmp_flx_v, cmp_flx]
 
+# =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+
 def compareProfilesTKE(statdomain, t_inds, ct_inds, h_inds, ds, cds):
   # Resolved perturbation energy and subgrid-scale TKE
   tke_e = np.mean(ds.variables['e*_0'+statdomain][t_inds,:],axis=0)
@@ -157,6 +175,8 @@ def compareProfilesTKE(statdomain, t_inds, ct_inds, h_inds, ds, cds):
   cmp_tke_e = createTableRow(np.divide(tke_e,tke_ce)*100.,'TKE (%)')
 
   return [cmp_tke_e]
+
+# =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
 
 def compileDataListAverages(domain, t_inds, h_inds, ds, varlist):
   sep = [[''] * (len(h_inds) + 1)]  # empty line string
@@ -179,6 +199,8 @@ def compileDataListAverages(domain, t_inds, h_inds, ds, varlist):
     dlist = dlist + pr_05
   return dlist
 
+# =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+
 def compileDataListCompare(domain, t_inds, ct_inds, h_inds, ds, cds, varlist):
   sep = [[''] * (len(h_inds) + 1)]  # empty line string
   dlist = []
@@ -196,3 +218,16 @@ def compileDataListCompare(domain, t_inds, ct_inds, h_inds, ds, cds, varlist):
     pr_04 = compareProfilesTKE(domain, t_inds, ct_inds, h_inds, ds, cds)
     dlist = dlist + pr_04 + sep
   return dlist
+
+# =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+
+def interpolateScalarField(var, x_dims, y_dims, x_dims_i, y_dims_i):
+  # Interpolates scalar field do desired resolution
+  # Cubic interpolation seems to create a bit smoother results.
+  from scipy.interpolate import interp2d
+  zf = interp2d(x_dims,y_dims,var, kind='cubic')
+  var=zf(x_dims_i, y_dims_i)
+
+  return var
+
+# =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
