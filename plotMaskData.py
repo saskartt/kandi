@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import sys
 import argparse
 import numpy as np
@@ -15,7 +16,7 @@ Plot time-averaged cross-sections from mask data.
 
 #==========================================================#
 
-parser = argparse.ArgumentParser(prog='createCanopyRaster.py',
+parser = argparse.ArgumentParser(prog='plotMaskData.py',
                                  description='''Plot time-averaged masks from output mask data.''')
 parser.add_argument("-f", "--file", type=str, help="Name of the input netCDF4 file.")
 parser.add_argument("-c", "--compare", type=str,
@@ -29,6 +30,10 @@ parser.add_argument("-l", "--lims", type=float, nargs=2, help="Colorbar limits."
 parser.add_argument("-y", "--ymax", type=float, help="Maximum (relative) height.")
 parser.add_argument("-t", "--topography", type=str, help="Topography mask file.")
 parser.add_argument("-q", "--quiver", type=str, help="File to read quiver vectors from.")
+parser.add_argument("-qt", "--quivertop", type=float, help="Draw quiver plot only to given level.")
+parser.add_argument("-qs", "--quiverscale", type=float, default=1, help="Scaling factor for the quiver plot arrows.")
+parser.add_argument("-s", "--save", type=str,help="Save the resulting figure as an EPS file.")
+
 args = parser.parse_args()
 
 #==========================================================#
@@ -59,14 +64,26 @@ if (args.topography):
 # Read interpolated vector data field from another file (output of groupVectorData.py)
 if (args.quiver):
   qds = openDataSet(args.quiver)
-  v = qds.variables["v"][t_inds, :, :, :]
+  # There might be differences in dt_domask between runs
+  qt_inds, = np.where(qds.variables['time'][:] >= skip_time_avg)
+  v = qds.variables["v"][qt_inds, :, :, :]
   v = np.mean(v, 0)
   v = np.mean(v, 2)
-  w = qds.variables["w"][t_inds, :, :, :]
+  w = qds.variables["w"][qt_inds, :, :, :]
   w = np.mean(w, 0)
   w = np.mean(w, 2)
   quiver_x_dims = qds.variables["y"][:]
-  quiver_y_dims = qds.variables["z"][:]
+
+  # Crop to user-defined top level
+  if (args.quivertop):
+    q_inds, = np.where(qds.variables["z"][:] <= args.quivertop)
+    quiver_y_dims = qds.variables["z"][q_inds]
+    v = v[q_inds,:]
+    w = w[q_inds,:]
+  else:
+    quiver_y_dims = qds.variables["z"][:]
+  # Calculate maximum arrow length for matplotlib quiver minshaft length (scales vector arrows)
+  minshaft = np.amax(np.hypot(v,w))
   qds.close()
 
 # Time averaging and averaging along x
@@ -81,15 +98,16 @@ var = interpolateScalarField(var, x_dims, y_dims, x_dims_i, y_dims_i)
 # Calculate comparsion and do the same averaging
 if (args.compare):
   cds = openDataSet(args.compare)
-  cvar = cds.variables[args.variable][t_inds, :, :, :]
+  ct_inds, = np.where(cds.variables['time'][:] >= skip_time_avg)
+  cvar = cds.variables[args.variable][ct_inds, :, :, :]
   # Time averaging and averaging along x
   cvar = np.mean(cvar, 0)
   cvar = np.mean(cvar, 2)
-  # Dimensions needed for interpolation
+  # Dimensions needed to interpolate into same grid as var
   cx_dims = ds.variables["y"][:]
   cy_dims = ds.variables["zw_3d"][:]
   cvar = interpolateScalarField(cvar, cx_dims, cy_dims, x_dims_i, y_dims_i)
-  var = np.abs(cvar) - np.abs(var)
+  var = np.abs(var) - np.abs(cvar)
   cds.close()
 
 # Set custom axes (ticks relative to building height)
@@ -99,7 +117,7 @@ xlen = x_dims[-1]
 ylen = y_dims[-1]
 
 xticklabels = np.arange(-1.5, 2.0, 0.5)
-xticks = np.arange(xlen / 2 - 1.5 * hlen - 0.5, xlen / 2 + 2 * hlen - 0.5, hlen / 2)
+xticks = np.arange(xlen / 2 - 1.5 * hlen - 1.0, xlen / 2 + 2 * hlen - 1.0, hlen / 2)
 yticks = np.arange(0.0, 3.0 * hlen + hlen / 2, hlen / 2)
 yticklabels = np.arange(0.0, 3.0, 0.5)
 
@@ -107,14 +125,17 @@ yticklabels = np.arange(0.0, 3.0, 0.5)
 cmap = mpl.cm.get_cmap(args.colormap)
 
 # Construct the figure
-fig = plt.figure()
+fig = plt.figure(figsize=(9, 4), dpi=120)
 ax = plt.gca()
 plt.xticks(xticks, xticklabels)
 plt.yticks(yticks, yticklabels)
 ax.set_ylim([1, args.ymax * hlen])
 # NOTE: Should not be hardcoded
-ax.set_xlim([xlen / 2 - 1.7 * hlen - 0.5, xlen / 2 + 1.7 * hlen - 0.5])
+ax.set_xlim([xlen / 2 - 1.7 * hlen - 1.0, xlen / 2 + 1.7 * hlen - 1.0])
 plt.axes().set_aspect('equal', 'datalim')
+
+ax.set_xlabel('$x/H$ [-]')
+ax.set_ylabel('$z/H$ [-]')
 
 # Color levels
 clevels = np.linspace(args.lims[0], args.lims[1], args.discretize + 1)
@@ -130,12 +151,23 @@ if (args.topography):
 # Plot vector arrows
 if (args.quiver):
   quiverplot = plt.quiver(quiver_x_dims, quiver_y_dims, v, w,
-                          color="k", scale=1, units='xy', minshaft=3)
+                          color="k", scale=args.quiverscale, units='xy', minshaft=minshaft)
   # quiverplot = plt.streamplot(quiver_x_dims, quiver_y_dims, v, w, color="k", linewidth=1.5, arrowsize=2)
 
 # Add colormap
 divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
+cax = divider.append_axes("right", size="5%", pad=0.15)
 cbar = fig.colorbar(imgplot, cax=cax, extend="both", extendfrac='auto')
-# fig.savefig( "dundun.eps", format='eps', dpi=600, bbox_inches='tight')
+
+# Set colorbar ticks to cover a range instead of the color bounds
+tick_len = (np.abs(args.lims[0]) + np.abs(args.lims[1]))/args.discretize
+cbar.set_ticks(np.linspace(args.lims[0]+tick_len/2.0, args.lims[1]-tick_len/2.0, args.discretize))
+ticklabellst = [str(args.lims[0]+i*tick_len) + u" {} ".format(unichr(8211)) + str(args.lims[0]+i*tick_len+tick_len) for i in xrange(args.discretize)]
+cbar.set_ticklabels(ticklabellst)
+cbar.ax.set_title('$\Delta |\mathbf{w}| \; \mathrm{[m/s]}$', loc="left")
+cbar.ax.tick_params(labelsize=10)
+plt.tight_layout()
+if (args.save):
+  fig.savefig( args.save, format='eps', dpi=600, bbox_inches='tight')
+  print("Figure {} saved.".format(args.save))
 plt.show()
