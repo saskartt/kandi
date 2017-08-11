@@ -22,22 +22,19 @@ def createTableRow(qty,label):
 
 def averageProfilesWS(statdomain, t_inds, h_inds, ds):
   # Mean values
-  u = np.mean(ds.variables['u_0'+statdomain][t_inds,:],axis=0)
+  u = np.mean(ds.variables['u'][t_inds,:],axis=0)
   # Interpolate values
-  u = np.interp(h_inds, ds.variables['zu_0'+statdomain][:], u)
-  str_u = createTableRow(u,'u')
+  u = np.interp(h_inds, ds.variables['zu'][:], u)
 
-  v = np.mean(ds.variables['v_0'+statdomain][t_inds,:],axis=0)
-  v = np.interp(h_inds, ds.variables['zv_0'+statdomain][:], v)
-  str_v = createTableRow(v,'v')
+  v = np.mean(ds.variables['v'][t_inds,:],axis=0)
+  v = np.interp(h_inds, ds.variables['zv'][:], v)
 
-  w = np.mean(ds.variables['w_0'+statdomain][t_inds,:],axis=0)
-  w = np.interp(h_inds, ds.variables['zw_0'+statdomain][:], w)
-  str_w = createTableRow(w,'w')
+  w = np.mean(ds.variables['w'][t_inds,:],axis=0)
+  w = np.interp(h_inds, ds.variables['zw'][:], w)
 
-  U = np.linalg.norm([u,v,w],axis=0)
+  U = np.linalg.norm([u,v],axis=0)
   str_U = createTableRow(U,'U')
-  return [str_u,str_v,str_w,str_U]
+  return [u,v,w,U]
 
 # =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
 
@@ -45,33 +42,27 @@ def averageProfilesVariances(statdomain, t_inds, h_inds, ds):
   # Variances
   var_u = np.mean(ds.variables['u*2_0'+statdomain][t_inds,:],axis=0)
   var_u = np.interp(h_inds, ds.variables['zu*2_0'+statdomain][:], var_u)
-  var_u = createTableRow(var_u,'u*2')
 
   var_v = np.mean(ds.variables['v*2_0'+statdomain][t_inds,:],axis=0)
   var_v = np.interp(h_inds, ds.variables['zv*2_0'+statdomain][:], var_v)
-  var_v = createTableRow(var_v,'v*2')
 
   var_w = np.mean(ds.variables['w*2_0'+statdomain][t_inds,:],axis=0)
   var_w = np.interp(h_inds, ds.variables['zw*2_0'+statdomain][:], var_w)
-  var_w = createTableRow(var_w,'w*2')
 
   return [var_u,var_v,var_w]
 
 # =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
 
 def averageProfilesMomentumFluxes(statdomain,t_inds, h_inds, ds):
-  flx_u = np.mean(ds.variables['wu_0'+statdomain][t_inds,:],axis=0)
-  flx_u = np.interp(h_inds, ds.variables['zwu_0'+statdomain][:], flx_u)
-  flx_u_str = createTableRow(flx_u, "wu")
+  flx_u = np.mean(ds.variables['wu'][t_inds,:],axis=0)
+  flx_u = np.interp(h_inds, ds.variables['zwu'][:], flx_u)
 
-  flx_v = np.mean(ds.variables['wv_0'+statdomain][t_inds,:],axis=0)
-  flx_v = np.interp(h_inds, ds.variables['zwv_0'+statdomain][:], flx_v)
-  flx_v_str = createTableRow(flx_v, "wv")
+  flx_v = np.mean(ds.variables['wv'][t_inds,:],axis=0)
+  flx_v = np.interp(h_inds, ds.variables['zwv'][:], flx_v)
 
   flx_uv = flx_u + flx_v
-  flx_uv = createTableRow(flx_uv, "u'w'+ v'w'")
 
-  return [flx_u_str, flx_v_str, flx_uv]
+  return [flx_u, flx_v, flx_uv]
 
 # =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
 
@@ -81,7 +72,7 @@ def averageProfilesTKE(statdomain, t_inds, h_inds, ds):
   tke_e = np.interp(h_inds, ds.variables['ze*_0'+statdomain][:], tke_e)
   tke_e_sg = np.mean(ds.variables['e_0'+statdomain][t_inds,:],axis=0)
   tke_e_sg = np.interp(h_inds, ds.variables['ze_0'+statdomain][:], tke_e_sg)
-  tke_e = createTableRow(tke_e+tke_e_sg, "TKE")
+  tke_e = tke_e+tke_e_sg
 
   return [tke_e]
 
@@ -221,6 +212,36 @@ def compileDataListCompare(domain, t_inds, ct_inds, h_inds, ds, cds, varlist):
 
 # =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
 
+def readVariableFromMask(ds, timespan, variable):
+  t_inds, = np.where(np.logical_and(ds.variables['time'][:] >= timespan[0], ds.variables['time'][:] <= timespan[1]))
+  var = ds.variables[variable][t_inds, :, :, :]
+
+  # Set Dimensions
+  x_dims = ds.variables["x"][:]  # plot x dimension
+  y_dims = ds.variables["y"][:]
+  z_dims = ds.variables["zu_3d"][:]
+
+  return var, x_dims, y_dims, z_dims
+
+# =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+
+def calculateTemporalStatistics(var, statistics):
+  # Do the desired statistical calculation
+  if (statistics == "avg"):
+    # Time averaging and averaging along x
+    var = np.mean(var, 0)
+    # var = np.mean(var, 2)
+  elif (statistics == "max"):
+    var = var[:,:,:,0] # Just take the first slice
+    var = np.amax(var, 0)
+  elif (statistics == "min"):
+    var = var[:,:,:,0]
+    var = np.amin(var, 0)
+
+  return var
+
+# =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+
 def interpolateScalarField(var, x_dims, y_dims, x_dims_i, y_dims_i):
   # Interpolates scalar field do desired resolution
   # Cubic interpolation seems to create a bit smoother results.
@@ -229,5 +250,21 @@ def interpolateScalarField(var, x_dims, y_dims, x_dims_i, y_dims_i):
   var=zf(x_dims_i, y_dims_i)
 
   return var
+
+# =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+
+def clipMask(arr, xdims, ydims, zdims, xlims, ylims, zlims):
+  # print(np.shape(arr))
+  if (xlims):
+    x_inds, = np.where(np.logical_and(xdims >= xlims[0], xdims <= xlims[1]))
+    arr = arr[:,:,:,x_inds]
+  if (ylims):
+    y_inds, = np.where(np.logical_and(ydims >= ylims[0], ydims <= ylims[1]))
+    arr = arr[:,:,y_inds,:]
+  if (zlims):
+    z_inds, = np.where(np.logical_and(zdims >= zlims[0], zdims <= zlims[1]))
+    arr = arr[:,z_inds,:,:]
+
+  return arr
 
 # =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
