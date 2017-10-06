@@ -19,8 +19,8 @@ Plot time-averaged vertical cross-sections from mask data (following M. Hefny Sa
 
 parser = argparse.ArgumentParser(prog='plotVSlice.py',
                                  description='''Plot time-averaged masks from output mask data. Some settings are defined in settings.py''')
-parser.add_argument("-f", "--file", type=str, help="Name of the input netCDF4 file.")
-parser.add_argument("-c", "--compare", type=str,
+parser.add_argument("-f", "--file", nargs='+', type=str, help="Name of the input netCDF4 file(s).")
+parser.add_argument("-c", "--compare", nargs='+', type=str,
                     help="Compare to velocity field to another netCDF4 file.")
 parser.add_argument("-var", "--variable", type=str, help="Variable to be plotted")
 parser.add_argument("-stat", "--statistics", type=str, default="avg", help="Statistics to be displayed. Options: avg, max, min")
@@ -45,15 +45,29 @@ args = parser.parse_args()
 # Required to correctly save as vector graphics
 mpl.rcParams['image.composite_image'] = False
 
-# Read data from the main dataset
-ds = openDataSet(args.file)
+
+# Read data from the main datasets
+ds = openDataSet(args.file[0])
 
 # Read variable and dimensions, dims correspond to plot dimensions
 var, __, x_dims, y_dims = readVariableFromMask(ds, timespan, args.variable)
-y_dims = y_dims+0.5 # ???
+# y_dims = y_dims+0.5
+# h_index, = np.where(y_dims <= bld_height)[0]
+# var = var[:,h_index,:,:]
 var = calculateTemporalStatistics(var, args.statistics)
 var = np.mean(var, 2)
 ds.close()
+
+# Read in second dataset and average with first one
+if (len(args.file)>1):
+  for filename in args.file[1:]:
+    ds = openDataSet(filename)
+    dsvar, __, __, __ = readVariableFromMask(ds, timespan, args.variable)
+    # Cut out a slice
+    # dsvar = dsvar[:,h_index,:,:]
+    dsvar = calculateTemporalStatistics(dsvar, args.statistics)
+    dsvar = np.mean(dsvar, 2)
+    var=(var+dsvar)/2
 
 # Read a slice of topography from topography dataset
 if (args.topography):
@@ -73,10 +87,10 @@ if (args.quiver):
   qt_inds, = np.where(np.logical_and(qds.variables['time'][:] >= timespan[0], qds.variables['time'][:] <= timespan[1]))
   v = qds.variables["v"][qt_inds, :, :, :]
   v = np.mean(v, 0)
-  v = np.mean(v, 2)
+  v = np.mean(v[:,:,0:30], 2)
   w = qds.variables["w"][qt_inds, :, :, :]
   w = np.mean(w, 0)
-  w = np.mean(w, 2)
+  w = np.mean(w[:,:,0:30], 2)
   quiver_x_dims = qds.variables["y"][:]
 
   # Crop to user-defined top level
@@ -92,8 +106,8 @@ if (args.quiver):
   # minshaft = np.amax(q_lengths)
   minshaft = 3.5 # Arbitrary for now
   # Remove the smallest vector arrows because for some reason matplotlib shows them as big dots
-  v[q_lengths <= minshaft/22.*args.quiverscale] = np.nan
-  w[q_lengths <= minshaft/22.*args.quiverscale] = np.nan
+  v[q_lengths <= minshaft/20.*args.quiverscale] = np.nan
+  w[q_lengths <= minshaft/20.*args.quiverscale] = np.nan
   qds.close()
 
 # Interpolate variable to topography resolution
@@ -103,25 +117,35 @@ var = interpolateScalarField(var, x_dims, y_dims, x_dims_i, y_dims_i)
 
 # Calculate comparsion and do the same averaging
 if (args.compare):
-  cds = openDataSet(args.compare)
+  cds = openDataSet(args.compare[0])
   cvar, __, cx_dims, cy_dims = readVariableFromMask(cds, timespan, args.variable)
   cvar = calculateTemporalStatistics(cvar, args.statistics)
   cvar = np.mean(cvar, 2)
+  cds.close()
+
+  # Read in second dataset and average with first one
+  if (len(args.compare)>1):
+    for filename in args.file[1:]:
+      cds = openDataSet(filename)
+      cdsvar, __, __, __ = readVariableFromMask(cds, timespan, args.variable)
+      cdsvar = calculateTemporalStatistics(cdsvar, args.statistics)
+      cdsvar = np.mean(cdsvar, 2)
+      cvar=(cvar+cdsvar)/2
+
   cvar = interpolateScalarField(cvar, cx_dims, cy_dims, x_dims_i, y_dims_i)
-  var = var-cvar
-  print(np.amax(var))
-  print(np.amin(var))
+  var = (var-cvar)/u_ref
   cds.close()
 
 # Set custom axes (ticks relative to building height)
 # NOTE: These should not be hardcoded
 hlen = bld_height  # This could be detected from the topography
-xlen = x_dims[-1]
-ylen = y_dims[-1]
+xlen = 128.
+ylen = 128.
 
-xticklabels = np.arange(0, 8.5, 0.5)
-xticks = np.arange(0.5, xlen-1.0, hlen / 2)
-xticks = np.append(xticks,xlen-1.0) # Offset last element by -1.0 m in order it to show
+xticklabels = np.arange(0, 4.5, 0.5)
+xticks = np.array([0.5])
+xticks = np.append(xticks,np.arange(hlen/2., xlen/2.0, hlen / 2))
+xticks = np.append(xticks,xlen/2.-0.5) # Offset last element by -0.5 m in order it to show
 yticks = np.arange(0.0, args.ymax * hlen + hlen / 2, hlen / 2)
 yticklabels = np.arange(0.0, args.ymax+1.0, 0.5)
 
@@ -133,9 +157,9 @@ fig = plt.figure(figsize=(10,4))
 ax = plt.gca()
 plt.xticks(xticks, xticklabels)
 plt.yticks(yticks, yticklabels)
-ax.set_ylim([1, args.ymax * hlen])
+ax.set_ylim([0, args.ymax * hlen])
 # NOTE: Should not be hardcoded
-ax.set_xlim([0.5, xlen -1.0 ])
+ax.set_xlim([7.5, xlen/2. -7.5 ])
 plt.axes().set_aspect('equal', 'datalim')
 
 ax.set_xlabel('$x/H$ [-]')
@@ -182,8 +206,8 @@ cbar.set_ticks(np.linspace(args.lims[0]+tick_len/2.0, args.lims[1]-tick_len/2.0,
 ticklabellst = [str(round(args.lims[0]+i*tick_len,3)) + u" {} ".format(unichr(8211)) + str(round(args.lims[0]+i*tick_len+tick_len,3)) for i in xrange(args.discretize)]
 cbar.set_ticklabels(ticklabellst)
 if (args.compare):
-  cbar.ax.set_title('$\Delta \mathbf{'+args.variable+'} \; \mathrm{[m/s]}$', loc="left")
-  plt.suptitle(args.file + " vs. " + args.compare)
+  cbar.ax.set_title('$\Delta '+args.variable+' /u^{*}_{ref} $', loc="left")
+  plt.suptitle(args.file[0].split("/")[0] + " vs. " + args.compare[0].split("/")[0])
 else:
   cbar.ax.set_title('$\mathbf{'+args.variable+'} \; \mathrm{[m/s]}$', loc="left")
 cbar.ax.tick_params(labelsize=10)
@@ -193,4 +217,4 @@ plt.tight_layout(w_pad=1.25, h_pad=1.25)
 if (args.save):
   fig.savefig( args.save, format='pdf', dpi=600, bbox_inches='tight')
   print("Figure {} saved.".format(args.save))
-plt.show()
+# plt.show()

@@ -5,7 +5,7 @@ import numpy as np
 timespan = [3600., 7200.]
 
 # Profile heights
-pr_heights_table = [1,2,4,6,8,10,12,14,16,17,18,20,25,30,100,128]
+pr_heights_table = [1,2,4,6,8,10]
 
 
 pr_heights_plot = np.arange(0,129,1)
@@ -14,6 +14,12 @@ pr_heights_plot = np.arange(0,129,1)
 bld_height = 16.0
 
 # Canopy settings
-tree_location = [27.0, 37.0]
-tree_height = [11.0, 11.0]
-tree_radius = [4.0, 4.0]
+tree_location = [27.0, 37.0, 91.0, 101.0]
+tree_height = [11.0, 11.0, 11.0, 11.0]
+tree_radius = [4.0, 4.0, 4.0, 4.0]
+
+# Reference friction velocity
+z_scale = 100 # Characteristic length scale in meters
+p_grad = -np.sqrt(0.003**2+0.003**2)# Pressure gradient
+rho = 1.25 # Air density
+u_ref=np.sqrt(-(1./rho)*p_grad*z_scale)

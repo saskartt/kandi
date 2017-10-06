@@ -19,7 +19,7 @@ Plot time-averaged horizontal cross-sections from mask data (following M. Hefny 
 
 parser = argparse.ArgumentParser(prog='plotHSlice.py',
                                  description='''Plot time-averaged horizontal cross sections from output mask data. Some settings are defined in settings.py''')
-parser.add_argument("-f", "--file", type=str, help="Name of the input netCDF4 file.")
+parser.add_argument("-f", "--file", nargs='+', type=str, help="Name of the input netCDF4 file(s).")
 parser.add_argument("-var", "--variable", type=str, help="Variable to be plotted")
 parser.add_argument("-z","--height", type=float, help="Height of the cross-sectional slice.")
 parser.add_argument("-stat", "--statistics", type=str, default="avg", help="Statistics to be displayed. Options: avg, max, min")
@@ -43,22 +43,35 @@ args = parser.parse_args()
 mpl.rcParams['image.composite_image'] = False
 
 # Read data from the main dataset
-ds = openDataSet(args.file)
+
+
+ds = openDataSet(args.file[0])
 var, x_dims, y_dims, z_dims = readVariableFromMask(ds, timespan, args.variable)
 # Cut out a slice
 h_index, = np.where(z_dims == args.height)[0]
 var = var[:,h_index,:,:]
 var = calculateTemporalStatistics(var, args.statistics)
 
+if (len(args.file)>1):
+  for filename in args.file[1:]:
+    ds = openDataSet(filename)
+    dsvar, dsx_dims, dsy_dims, dsz_dims = readVariableFromMask(ds, timespan, args.variable)
+    # Cut out a slice
+    h_index, = np.where(dsz_dims == args.height)[0]
+    dsvar = dsvar[:,h_index,:,:]
+    dsvar = calculateTemporalStatistics(dsvar, args.statistics)
+    var = np.append(var,dsvar,axis=0)
+    y_dims = np.append(y_dims,dsy_dims)
+
 # Read a slice of topography
 if (args.topography):
   tds = openDataSet(args.topography)
   topo = tds.variables["buildings_0"][:]
-  topo = topo[:, :, :]
+  topo = topo[h_index, :, :]
   topo_mask = np.ma.masked_where(topo == 0, topo)
   # Offset topography by 0.5 m in plot x direction
   topo_x_dims = tds.variables["x"][:]
-  topo_y_dims = tds.variables["y"][:]
+  topo_y_dims = tds.variables["y"][:]+0.5
   tds.close()
 
 # Interpolate variable to topography resolution
@@ -67,16 +80,17 @@ y_dims_i = np.arange(y_dims[0], y_dims[-1], 1)
 var = interpolateScalarField(var, x_dims, y_dims, x_dims_i, y_dims_i)
 
 # Set custom axes
-hlen = bld_height
-xlen = x_dims[-1]-x_dims[0]
-ylen = y_dims[-1]-y_dims[0]
-y_mp = np.mean([y_dims[0], y_dims[-1]])
+hlen = bld_height  # This could be detected from the topography
+xlen = x_dims_i[-1]
+ylen = y_dims_i[-1]
 
-xticks = np.arange(0.0, xlen, hlen / 2)
-xticklabels = np.arange(0.0, xlen/hlen, 0.5)
+yticklabels = np.arange(0, 8.5, 1.0)
+yticks = np.arange(0.5, xlen-1.0, hlen)
+yticks = np.append(yticks,xlen)
 
-yticklabels = np.arange(-1.5, 2.0, 0.5)
-yticks = np.arange(y_mp - 1.5 * hlen, y_mp + 2. * hlen, hlen / 2.)
+xticklabels = np.arange(0, 9.0, 1.0)
+xticks = np.arange(0.5, xlen-1.0, hlen)
+xticks = np.append(xticks,xlen-0.5)
 
 #Set colormap
 cmap = mpl.cm.get_cmap(args.colormap)
@@ -100,9 +114,9 @@ clevels = np.linspace(args.lims[0], args.lims[1], args.discretize + 1)
 imgplot = plt.contourf(x_dims_i-0.5, y_dims_i, var, levels=clevels, cmap=cmap, origin='lower',zorder=0)
 
 
-# if (args.topography):
-  # topoplot = plt.contourf(topo_x_dims, topo_y_dims, topo_mask,
-                          # cmap=mpl.cm.binary, vmin=0, vmax=1, interpolation=None, zorder=1)
+if (args.topography):
+  topoplot = plt.contourf(topo_x_dims, topo_y_dims, topo_mask,
+                         cmap=mpl.cm.binary, vmin=0, vmax=1, interpolation=None, zorder=1)
 
 # Add colormap
 divider = make_axes_locatable(ax)
