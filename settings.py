@@ -2,7 +2,7 @@
 import numpy as np
 
 # Skip data from the beginning of the simulation before time-averaging
-timespan = [3600., 7200.]
+timespan = [1800, 7200.]
 
 # Profile heights
 pr_heights_table = [1,2,4,6,8,10]
@@ -20,6 +20,6 @@ tree_radius = [4.0, 4.0, 4.0, 4.0]
 
 # Reference friction velocity
 z_scale = 100 # Characteristic length scale in meters
-p_grad = -np.sqrt(0.003**2+0.003**2)# Pressure gradient
+p_grad = -0.003# Pressure gradient
 rho = 1.25 # Air density
 u_ref=np.sqrt(-(1./rho)*p_grad*z_scale)

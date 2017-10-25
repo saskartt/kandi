@@ -90,7 +90,7 @@ if (args.quiver):
   v = np.mean(v[:,:,0:30], 2)
   w = qds.variables["w"][qt_inds, :, :, :]
   w = np.mean(w, 0)
-  w = np.mean(w[:,:,0:30], 2)
+  w = np.mean(w, 2)
   quiver_x_dims = qds.variables["y"][:]
 
   # Crop to user-defined top level
@@ -106,8 +106,8 @@ if (args.quiver):
   # minshaft = np.amax(q_lengths)
   minshaft = 3.5 # Arbitrary for now
   # Remove the smallest vector arrows because for some reason matplotlib shows them as big dots
-  v[q_lengths <= minshaft/20.*args.quiverscale] = np.nan
-  w[q_lengths <= minshaft/20.*args.quiverscale] = np.nan
+  #v[q_lengths <= minshaft/20.*args.quiverscale] = np.nan
+  #w[q_lengths <= minshaft/20.*args.quiverscale] = np.nan
   qds.close()
 
 # Interpolate variable to topography resolution
@@ -178,9 +178,9 @@ if (args.topography):
 
 # Plot vector arrows
 if (args.quiver):
-  quiverplot = plt.quiver(quiver_x_dims, quiver_y_dims, v, w,
-                          color="k", scale=args.quiverscale, units='xy', minshaft=minshaft, pivot="tail", zorder=3)
-  # quiverplot = plt.streamplot(quiver_x_dims, quiver_y_dims, v, w, color="k", linewidth=1.5, arrowsize=2)
+  # quiverplot = plt.quiver(quiver_x_dims, quiver_y_dims, v, w,
+  #                         color="k", scale=args.quiverscale, units='xy', minshaft=minshaft, pivot="tail", zorder=3)
+  quiverplot = plt.streamplot(quiver_x_dims, quiver_y_dims, v, w, color="k", linewidth=1, arrowsize=1, density=2)
 
 # Add raster tree images to plot
 if (args.canopy):
@@ -193,7 +193,7 @@ if (args.canopy):
     t_left = tree_location[ntree] - tree_radius[ntree]
     t_right =  tree_location[ntree] + tree_radius[ntree]
     t_top = tree_height[ntree]
-    plt.imshow(imgarr,extent=[t_left, t_right, 0.0, t_top],alpha=args.canopyalpha,interpolation=None, zorder=2)
+    plt.imshow(imgarr,extent=[t_left, t_right, 0.0, t_top],alpha=args.canopyalpha,interpolation=None, zorder=1.5)
 
 # Add colormap
 divider = make_axes_locatable(ax)
@@ -217,4 +217,4 @@ plt.tight_layout(w_pad=1.25, h_pad=1.25)
 if (args.save):
   fig.savefig( args.save, format='pdf', dpi=600, bbox_inches='tight')
   print("Figure {} saved.".format(args.save))
-# plt.show()
+plt.show()

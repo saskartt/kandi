@@ -138,16 +138,16 @@ for ds in dsList:
       flux1=averageProfilesMomentumFluxes(domain, tpList[ds], pr_heights_plot, ds)[0]
       flux2=averageProfilesMomentumFluxes(domain, tpList[ds], pr_heights_plot, ds)[1]
       flux = (flux1**2.0 + flux2**2.0)**0.25
-      fric_vel= np.mean(flux[18:30])
+      fric_vel= np.mean(flux[20:28])
       print(fric_vel)
 
       datalist=averageProfilesWS(domain, tpList[ds], pr_heights_plot, ds)
       hwind = datalist[3]
-      plt.xlabel("$\mathbf{u}\/\mathrm{(m/s)}$",fontsize=14)
-      plt.plot(hwind,pr_heights_plot, label=r'Run: {}, simulated'.format(nameList[ds][4], domain),color=color_cycle[i])
+      plt.xlabel("$\mathbf{u}/\mathbf{u_*}\/\mathrm{(m/s)}$",fontsize=14)
+      plt.plot(hwind/fric_vel,pr_heights_plot, label=r'Run: {}, simulated'.format(nameList[ds][4], domain),color=color_cycle[i])
 
-      z=pr_heights_plot[18:30]
-      u_profile = hwind[18:30]
+      z=pr_heights_plot[20:28]
+      u_profile = hwind[20:28]
       funcLogProfile = lambda val,z : (fric_vel/0.41)*np.log((z-val[1])/val[0])
       ErrorFunc = lambda val,z,pr:  funcLogProfile(val,z)-u_profile
       valInitial=(0.5,14.0)
@@ -155,7 +155,7 @@ for ds in dsList:
       print("Least squrares fit: {}".format(valFinal))
 
       np.seterr(invalid='ignore')
-      pr=(fric_vel/0.41)*np.log((pr_heights_plot-valFinal[1])/valFinal[0])
+      pr=(1./0.41)*np.log((pr_heights_plot-valFinal[1])/valFinal[0])
       # plt.plot(pr,pr_heights_plot, label=r'Run: {}, logprofile'.format(nameList[ds][4:], domain))
 
 
