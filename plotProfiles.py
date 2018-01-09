@@ -27,6 +27,7 @@ parser.add_argument("-d", "--domains", type=str, nargs='+',
 parser.add_argument("-v", "--variable", type=str,
                     default="u", help="Variable to be plotted.")
 parser.add_argument("-s", "--save", type=str, help="Save resulting figure as.")
+parser.add_argument("-ft", "--fit", type=int, nargs=2, default=[30,60], help="Range of vertical grid points to fit to.")
 parser.add_argument("-x", "--xlims", type=float, nargs=2, help="Set x axis limits manually.")
 parser.add_argument("-y", "--ylims", type=float, nargs=2, help="Set y axis limits manually.")
 args = parser.parse_args()
@@ -54,7 +55,7 @@ if (args.ylims):
 else:
   axes.set_ylim([0, 128])
 plt.ylabel("$z\/\mathrm{(m)}$",fontsize=14)
-color_cycle = ['b', 'g', 'r', 'c', 'm', 'y']
+color_cycle = ['b', 'g', 'r', 'c', 'm', 'y', 'fuchsia', 'gold', 'orange', 'lightcoral', 'lightslategrey','tan']
 i=0
 
 for ds in dsList:
@@ -138,7 +139,7 @@ for ds in dsList:
       flux1=averageProfilesMomentumFluxes(domain, tpList[ds], pr_heights_plot, ds)[0]
       flux2=averageProfilesMomentumFluxes(domain, tpList[ds], pr_heights_plot, ds)[1]
       flux = (flux1**2.0 + flux2**2.0)**0.25
-      fric_vel= np.mean(flux[20:28])
+      fric_vel= np.mean(flux[args.fit[0]:args.fit[1]])
       print(fric_vel)
 
       datalist=averageProfilesWS(domain, tpList[ds], pr_heights_plot, ds)
@@ -146,11 +147,11 @@ for ds in dsList:
       plt.xlabel("$\mathbf{u}/\mathbf{u_*}\/\mathrm{(m/s)}$",fontsize=14)
       plt.plot(hwind/fric_vel,pr_heights_plot, label=r'Run: {}, simulated'.format(nameList[ds][4], domain),color=color_cycle[i])
 
-      z=pr_heights_plot[20:28]
-      u_profile = hwind[20:28]
+      z=pr_heights_plot[args.fit[0]:args.fit[1]]
+      u_profile = hwind[args.fit[0]:args.fit[1]]
       funcLogProfile = lambda val,z : (fric_vel/0.41)*np.log((z-val[1])/val[0])
-      ErrorFunc = lambda val,z,pr:  funcLogProfile(val,z)-u_profile
-      valInitial=(0.5,14.0)
+      ErrorFunc = lambda val,z,pr:  np.abs(funcLogProfile(val,z)-u_profile)
+      valInitial=(1.0,0.0)
       valFinal,success = leastsq(ErrorFunc,valInitial[:],args=(z,u_profile))
       print("Least squrares fit: {}".format(valFinal))
 
@@ -172,8 +173,8 @@ for ds in dsList:
     plt.plot(pr,pr_heights_plot, label=r'Run: {}, log profile'.format(nameList[ds][4]), linestyle='--', color=color_cycle[i])
     i=i+1
 
-axes.fill_between(np.linspace(0,12.0), 16, 32, facecolor='yellow', alpha=0.3,
-                label='Roof level < h < 0.3*BLH')
+#axes.fill_between(np.linspace(0,12.0), 16, 32, facecolor='yellow', alpha=0.3,
+#                label='Roof level < h < 0.3*BLH')
 leg = plt.legend(loc=0, fontsize=9)
 for legobj in leg.legendHandles:
     legobj.set_linewidth(2.0)

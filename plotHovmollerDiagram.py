@@ -29,21 +29,21 @@ args = parser.parse_args()
 
 ds = openDataSet(args.file)
 
-var, xdims, __, __ = readVariableFromMask(ds,[0., 7200.], args.variable)
-t_inds, = np.where(np.logical_and(ds.variables['time'][:] >= 0., ds.variables['time'][:] <= 7200.))
-var=var[:,25,0,:]
+var, xdims, __, __ = readVariableFromMask(ds,[0., 18000.], args.variable)
+t_inds, = np.where(np.logical_and(ds.variables['time'][:] >= 0., ds.variables['time'][:] <= 18000.))
+var=var[:,5,:,256]
 tdims=ds.variables['time'][t_inds]
 tdims = interpolation.zoom(tdims,0.25)
 xdims = interpolation.zoom(xdims,0.25)
 var = interpolation.zoom(var,0.25)
 X,Y = np.meshgrid(xdims,tdims)
 cmap = mpl.cm.get_cmap("viridis")
-bounds = np.linspace(0,11,10)
+bounds = np.linspace(0,12,11)
 norm = colors.BoundaryNorm(boundaries=bounds, ncolors=256)
 print(np.amax(var))
-cp=plt.contourf(X,Y,var,8,vmin=0., vmax=11.,cmap=cmap)
+cp=plt.contourf(X,Y,var,8,vmin=0., vmax=12.,cmap=cmap)
 plt.ylabel("Time [s]")
-plt.xlabel("x [m]")
+plt.xlabel("y [m]")
 cbar = plt.colorbar(cp,ticks=bounds)
-plt.title(u"x-directional diagram of variable {}".format(args.variable))
+plt.title(u"y-directional diagram of variable {}".format(args.variable))
 plt.show()

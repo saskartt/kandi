@@ -41,11 +41,11 @@ cmap = mpl.cm.get_cmap(args.colormap)
 
 ds = openDataSet(args.file)
 
-var, x_dims, y_dims, z_dims = readVariableFromMask(ds, [0, 7200.], args.variable)
+var, x_dims, y_dims, z_dims = readVariableFromMask(ds, [0, 18000.], args.variable)
 h_index, = np.where(z_dims == args.height)[0]
 var = var[:,h_index,:,:]
 
-t_set=np.arange(0,7201,args.tstep)
+t_set=np.arange(0,18001,args.tstep)
 
 fig = plt.figure()
 for i in xrange(len(t_set)-1):

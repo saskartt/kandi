@@ -2,7 +2,7 @@
 import numpy as np
 
 # Skip data from the beginning of the simulation before time-averaging
-timespan = [1800, 7200.]
+timespan = [3600, 18000.]
 
 # Profile heights
 pr_heights_table = [1,2,4,6,8,10]
