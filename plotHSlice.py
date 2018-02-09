@@ -102,7 +102,7 @@ plt.xticks(xticks, xticklabels)
 plt.yticks(yticks, yticklabels)
 # ax.set_ylim([y_mp - 1.7 * hlen, y_mp + 1.7 * hlen ])
 # ax.set_ylim([1, args.ymax * hlen])
-ax.set_xlim([topo_x_dims[0], topo_x_dims[-1]])
+ax.set_xlim([x_dims[0], x_dims[-1]])
 # NOTE: Should not be hardcoded
 plt.axes().set_aspect('equal')
 
