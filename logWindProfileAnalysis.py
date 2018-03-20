@@ -93,8 +93,8 @@ if (not(args.gryningProfile)):
         zd[ix,iy]=fitSolution[1]
 else:
     h=320.
-    #h=fricVel/(12*1e-4)
-    funcLogProfile = lambda z,a,b : (fricVel/0.4)*(np.log((z-b)/a)+(z-b)/(fricVel/(2*1e-4*np.log(fricVel/(1e-4*a))+55*1e-4))-(z-b)/(h)*((z-b)/(fricVel/(1e-4*np.log(fricVel/(1e-4*a))+55*1e-4))))
+    f=1e-4
+    funcLogProfile = lambda z,a,b : (fricVel/0.4)*(np.log((z-b)/a)+(z-b)/(h/(2*(((np.log(fricVel/(f*a))-1.9)**2+4.9**2)**0.5-np.log(h/a))))-((z-b)/h)*((z-b)/(2*h/(2*(((np.log(fricVel/(f*a))-1.9)**2+4.9**2)**0.5-np.log(h/a))))))
 
     # for ix in np.arange(len(xGridPoints)):
     #   for iy in np.arange(len(yGridPoints)):

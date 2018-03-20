@@ -72,6 +72,7 @@ for ds in dsList:
 
     z=pr_heights_plot[args.fit[0]:args.fit[1]]
     u_profile = hwind[args.fit[0]:args.fit[1]]
+    np.seterr(invalid='ignore') # Ignore invalid logarithm values
 
     if (args.profile=="log"):
       funcLogProfile = lambda z,a,b : (fricVel/0.4)*np.log((z-b)/a)
@@ -84,12 +85,16 @@ for ds in dsList:
         h=args.blh
       else:
         h=fricVel/(12*1e-4)
-      funcLogProfile = lambda z,a,b : (fricVel/0.4)*(np.log((z-b)/a)+(z-b)/(fricVel/(2*1e-4*np.log(fricVel/(1e-4*a))+55*1e-4))-(z-b)/(h)*((z-b)/(fricVel/(1e-4*np.log(fricVel/(1e-4*a))+55*1e-4))))
+      f=1e-4
+      funcLogProfile = lambda z,a,b : (fricVel/0.4)*(np.log((z-b)/a)+(z-b)/(h/(2*(((np.log(fricVel/(f*a))-1.9)**2+4.9**2)**0.5-np.log(h/a))))-((z-b)/h)*((z-b)/(2*h/(2*(((np.log(fricVel/(f*a))-1.9)**2+4.9**2)**0.5-np.log(h/a))))))
 
     fitSolution, pcov = curve_fit(funcLogProfile,z,u_profile)
+    perr = np.sqrt(np.diag(pcov))
+    print("")
+    print("z_0: {} +/- {}".format(fitSolution[0],perr[0]))
+    print("z_d: {} +/- {}".format(fitSolution[1],perr[1]))
     pr=funcLogProfile(pr_heights_plot,fitSolution[0],fitSolution[1])
-    print("Least squrares fit: {}".format(fitSolution))
-    np.seterr(invalid='ignore')
+
     # plt.plot(pr,pr_heights_plot, label=r'Run: {}, logprofile'.format(nameList[ds][4:], domain))
 
     if (args.ylims):
