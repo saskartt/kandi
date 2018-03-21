@@ -86,12 +86,12 @@ for ds in dsList:
       else:
         h=fricVel/(12*1e-4)
       f=1e-4
-      funcLMBLN = lambda fricVel,f,a,h : (h/(2*(((np.log(fricVel/(1e-4*a))-1.9)**2+4.9**2)**0.5-np.log(h/a))))
       funcLogProfile = lambda z,a,b : (fricVel/0.4)*(np.log((z-b)/a)+(z-b)/(h/(2*(((np.log(fricVel/(1e-4*a))-1.9)**2+4.9**2)**0.5-np.log(h/a))))-((z-b)/h)*((z-b)/(h/(((np.log(fricVel/(1e-4*a))-1.9)**2+4.9**2)**0.5-np.log(h/a)))))
 
     fitSolution, pcov = curve_fit(funcLogProfile,z,u_profile)
     perr = np.sqrt(np.diag(pcov))
     print("")
+    print("u*: {}".format(fricVel))
     print("z_0: {} +/- {}".format(fitSolution[0],perr[0]))
     print("z_d: {} +/- {}".format(fitSolution[1],perr[1]))
     pr=funcLogProfile(pr_heights_plot,fitSolution[0],fitSolution[1])

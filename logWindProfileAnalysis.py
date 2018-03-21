@@ -79,6 +79,7 @@ z0 = np.zeros((len(xGridPoints),len(yGridPoints)))
 z0StdDev = np.zeros((len(xGridPoints),len(yGridPoints)))
 z0Residual = np.zeros((len(xGridPoints),len(yGridPoints)))
 zd = np.zeros((len(xGridPoints),len(yGridPoints)))
+np.seterr(invalid='ignore') # Ignore invalid logarithm values
 
 if (not(args.gryningProfile)):
   funcLogProfile = lambda z,a,b : (fricVel/0.4)*np.log((z-b)/a)
@@ -96,14 +97,14 @@ else:
     f=1e-4
     funcLogProfile = lambda z,a,b : (fricVel/0.4)*(np.log((z-b)/a)+(z-b)/(h/(2*(((np.log(fricVel/(1e-4*a))-1.9)**2+4.9**2)**0.5-np.log(h/a))))-((z-b)/h)*((z-b)/(h/(((np.log(fricVel/(1e-4*a))-1.9)**2+4.9**2)**0.5-np.log(h/a)))))
 
-    # for ix in np.arange(len(xGridPoints)):
-    #   for iy in np.arange(len(yGridPoints)):
-    #       hWindColumn, = hWindFit[ix,iy,:]
-    #       fitSolution, pcov = curve_fit(funcLogProfile,zFitRange,hWindColumn)
-    #       z0[ix,iy]=fitSolution[0]
-    #       z0StdDev[ix,iy]=np.sqrt(np.diag(pcov))[0]/fitSolution[0]
-    #       z0Residual[ix,iy]=np.sum((hWindColumn-funcLogProfile(zFitRange,fitSolution[0],fitSolution[1]))**2)
-    #       zd[ix,iy]=fitSolution[1]
+    for ix in np.arange(len(xGridPoints)):
+       for iy in np.arange(len(yGridPoints)):
+           hWindColumn, = hWindFit[ix,iy,:]
+           fitSolution, pcov = curve_fit(funcLogProfile,zFitRange,hWindColumn)
+           z0[ix,iy]=fitSolution[0]
+           z0StdDev[ix,iy]=np.sqrt(np.diag(pcov))[0]/fitSolution[0]
+           z0Residual[ix,iy]=np.sum((hWindColumn-funcLogProfile(zFitRange,fitSolution[0],fitSolution[1]))**2)
+           zd[ix,iy]=fitSolution[1]
 
 
 print("...done.")
@@ -112,12 +113,12 @@ plt.figure()
 plt.contourf(z0,10)
 plt.title("$z_0$")
 plt.colorbar()
+print("z_0 avg: {}".format(np.mean(z0)))
 
 hWindColumn, = np.mean(hWindFit,(0,1))
 fitSolution, pcov = curve_fit(funcLogProfile,zFitRange,hWindColumn)
 pr=funcLogProfile(zGridPoints,fitSolution[0],fitSolution[1])
 plt.figure()
-print(fitSolution)
 plt.plot(np.mean(hWind,(0,1)),zGridPoints)
 plt.plot(pr,zGridPoints)
 
