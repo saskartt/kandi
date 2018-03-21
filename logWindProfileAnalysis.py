@@ -94,7 +94,7 @@ if (not(args.gryningProfile)):
 else:
     h=320.
     f=1e-4
-    funcLogProfile = lambda z,a,b : (fricVel/0.4)*(np.log((z-b)/a)+(z-b)/(h/(2*(((np.log(fricVel/(f*a))-1.9)**2+4.9**2)**0.5-np.log(h/a))))-((z-b)/h)*((z-b)/(2*h/(2*(((np.log(fricVel/(f*a))-1.9)**2+4.9**2)**0.5-np.log(h/a))))))
+    funcLogProfile = lambda z,a,b : (fricVel/0.4)*(np.log((z-b)/a)+(z-b)/(h/(2*(((np.log(fricVel/(1e-4*a))-1.9)**2+4.9**2)**0.5-np.log(h/a))))-((z-b)/h)*((z-b)/(h/(((np.log(fricVel/(1e-4*a))-1.9)**2+4.9**2)**0.5-np.log(h/a)))))
 
     # for ix in np.arange(len(xGridPoints)):
     #   for iy in np.arange(len(yGridPoints)):
